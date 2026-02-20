@@ -21,17 +21,28 @@ jobs:
 
       - name: Build App
         run: |
-          # Sucht automatisch nach der Projekt-Datei (.xcodeproj oder .xcworkspace)
-          WORKSPACE_PATH=$(find ios -name "*.xcworkspace" | head -n 1)
-          PROJECT_PATH=$(find ios -name "*.xcodeproj" | head -n 1)
-          
-          if [ -n "$WORKSPACE_PATH" ]; then
-            echo "Using workspace: $WORKSPACE_PATH"
-            xcodebuild -workspace "$WORKSPACE_PATH" -scheme App -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO clean build
-          else
-            echo "Using project: $PROJECT_PATH"
-            xcodebuild -project "$PROJECT_PATH" -scheme App -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO clean build
-          fi
+          xcodebuild -workspace ios/App/App.xcworkspace \
+                     -scheme App \
+                     -configuration Debug \
+                     -sdk iphoneos \
+                     -destination 'generic/platform=iOS' \
+                     -derivedDataPath build \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
+                     clean build
+
+      - name: Create IPA
+        run: |
+          mkdir -p Payload
+          # Wir kopieren alles aus dem festen Build-Ordner
+          cp -r build/Build/Products/Debug-iphoneos/*.app Payload/
+          zip -r NyroxCore.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: NyroxCore-Final-IPA
+          path: NyroxCore.ipa
 
       - name: Prepare and Upload App
         run: |
