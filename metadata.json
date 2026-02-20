@@ -1,0 +1,5 @@
+{
+  "name": "NyroxCore AI",
+  "description": "Ein moderner KI-Arbeitsbereich mit Unterstützung für OpenAI und Gemini, inklusive Chat- und IDE-Modus.",
+  "requestFramePermissions": []
+}
