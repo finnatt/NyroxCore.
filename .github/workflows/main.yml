@@ -33,8 +33,17 @@ jobs:
             xcodebuild -project "$PROJECT_PATH" -scheme App -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO clean build
           fi
 
-      - name: Upload Build
+      - name: Prepare and Upload App
+        run: |
+          # Erstellt einen Sammelordner
+          mkdir -p exported_app/Payload
+          # Sucht die .app Datei und kopiert sie in den Payload-Ordner
+          find ~/Library/Developer/Xcode/DerivedData -name "*.app" -exec cp -r {} exported_app/Payload/ \;
+          # Zippt es direkt auf dem Server zu einer echten .ipa
+          cd exported_app && zip -r ../NyroxCore.ipa Payload
+          
+      - name: Deliver IPA
         uses: actions/upload-artifact@v4
         with:
-          name: NyroxCore-App
-          path: ~/Library/Developer/Xcode/DerivedData/**/Build/Products/Debug-iphoneos/*.app
+          name: NyroxCore-Ready-To-Install
+          path: NyroxCore.ipa
