@@ -1,0 +1,37 @@
+name: Build iOS IPA
+on: [push]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Capacitor Sync
+        run: npx cap sync ios
+
+      - name: Build App
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+                     -scheme App \
+                     -sdk iphoneos \
+                     -configuration Debug \
+                     -destination 'generic/platform=iOS' \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
+                     clean build
+
+      - name: Upload Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: NyroxCore-App
+          path: ~/Library/Developer/Xcode/DerivedData/**/Build/Products/Debug-iphoneos/*.app
