@@ -21,47 +21,33 @@ jobs:
 
       - name: Build App
         run: |
-          # 1. Finde heraus, wo die Projektdatei wirklich liegt
-          PATH_TO_WORKSPACE=$(find ios -name "*.xcworkspace" | head -n 1)
-          echo "Workspace gefunden unter: $PATH_TO_WORKSPACE"
+          # 1. Suche die Workspace-Datei, egal wo sie liegt
+          WORKSPACE=$(find . -name "*.xcworkspace" | head -n 1)
+          echo "Workspace gefunden: $WORKSPACE"
           
-          # 2. Bauen mit festem Zielordner (build-output)
-          xcodebuild -workspace "$PATH_TO_WORKSPACE" \
+          # 2. Bauen mit einem festen Zielordner im aktuellen Verzeichnis
+          xcodebuild -workspace "$WORKSPACE" \
                      -scheme App \
                      -configuration Debug \
                      -sdk iphoneos \
                      -destination 'generic/platform=iOS' \
-                     -derivedDataPath build-output \
+                     -derivedDataPath output \
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO \
                      clean build
 
-      - name: Create Real IPA
+      - name: Create IPA
         run: |
-          # 3. Payload-Ordner für iOS erstellen
+          # 3. Payload-Ordner erstellen
           mkdir -p Payload
-          # 4. Die echte .app Datei suchen und in Payload kopieren
-          find build-output -name "*.app" -exec cp -r {} Payload/ \;
+          # 4. Die gebaute .app Datei im 'output' Ordner suchen und kopieren
+          APP_PATH=$(find output -name "*.app" | head -n 1)
+          cp -r "$APP_PATH" Payload/
           # 5. Als IPA zippen
           zip -r NyroxCore.ipa Payload
 
-      - name: Upload Final IPA
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: NyroxCore-Ready-To-Install
-          path: NyroxCore.ipa
-
-      - name: Prepare and Upload App
-        run: |
-          # Erstellt einen Sammelordner
-          mkdir -p exported_app/Payload
-          # Sucht die .app Datei und kopiert sie in den Payload-Ordner
-          find ~/Library/Developer/Xcode/DerivedData -name "*.app" -exec cp -r {} exported_app/Payload/ \;
-          # Zippt es direkt auf dem Server zu einer echten .ipa
-          cd exported_app && zip -r ../NyroxCore.ipa Payload
-          
-      - name: Deliver IPA
-        uses: actions/upload-artifact@v4
-        with:
-          name: NyroxCore-Ready-To-Install
+          name: NyroxCore-IPA-Package
           path: NyroxCore.ipa
