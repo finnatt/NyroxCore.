@@ -21,27 +21,34 @@ jobs:
 
       - name: Build App
         run: |
-          xcodebuild -workspace ios/App/App.xcworkspace \
+          # 1. Finde heraus, wo die Projektdatei wirklich liegt
+          PATH_TO_WORKSPACE=$(find ios -name "*.xcworkspace" | head -n 1)
+          echo "Workspace gefunden unter: $PATH_TO_WORKSPACE"
+          
+          # 2. Bauen mit festem Zielordner (build-output)
+          xcodebuild -workspace "$PATH_TO_WORKSPACE" \
                      -scheme App \
                      -configuration Debug \
                      -sdk iphoneos \
                      -destination 'generic/platform=iOS' \
-                     -derivedDataPath build \
+                     -derivedDataPath build-output \
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO \
                      clean build
 
-      - name: Create IPA
+      - name: Create Real IPA
         run: |
+          # 3. Payload-Ordner für iOS erstellen
           mkdir -p Payload
-          # Wir kopieren alles aus dem festen Build-Ordner
-          cp -r build/Build/Products/Debug-iphoneos/*.app Payload/
+          # 4. Die echte .app Datei suchen und in Payload kopieren
+          find build-output -name "*.app" -exec cp -r {} Payload/ \;
+          # 5. Als IPA zippen
           zip -r NyroxCore.ipa Payload
 
-      - name: Upload IPA
+      - name: Upload Final IPA
         uses: actions/upload-artifact@v4
         with:
-          name: NyroxCore-Final-IPA
+          name: NyroxCore-Ready-To-Install
           path: NyroxCore.ipa
 
       - name: Prepare and Upload App
